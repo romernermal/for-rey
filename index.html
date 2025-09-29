@@ -1,0 +1,632 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>for rey</title> 
+    <!-- Load Tailwind CSS --> 
+    <script src="https://cdn.tailwindcss.com"></script> 
+<style>
+  /* Base reset & layout */
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #000;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    overflow-x: hidden; /* prevent sideways scroll */
+  }
+
+  #image-container {
+    position: relative;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  /* --- USE YOUR ORIGINAL FLICKER IMAGE POSITIONING --- */
+  #flicker-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -72%) scaleX(1); /* keep your tuned offset */
+    max-width: 90vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5),
+                0 4px 6px -2px rgba(0,0,0,0.05);
+    opacity: 0;
+  }
+
+  #click-prompt {
+    position: absolute;
+    bottom: 5vh;
+    color: #4a4a4a;
+    font-size: 0.875rem;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* Overlay */
+  #fade-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: black;
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+    transition: opacity 3s ease-in-out;
+  }
+
+  /* Birthday text */
+  #birthday-text {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(2rem, 10vw, 6rem);
+    font-weight: 900;
+    color: #fff;
+    opacity: 0;
+    z-index: 10;
+    text-shadow: 0 0 20px rgba(255,255,255,0.5);
+    transition: opacity 3s ease-in-out;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+/* Falling particles (confetti) — sandboxed and lightweight */
+.falling-particle {
+  position: absolute;
+  top: 0; /* exact position handled by JS translate() */
+  left: 0;
+  opacity: 1;
+  width: 8vw;
+  height: 8vw;
+  max-width: 50px;
+  max-height: 50px;
+  pointer-events: none;
+  object-fit: contain;
+  transition: opacity 0.4s ease-out; /* smooth fade near bottom */
+}
+
+
+  /* Tablet adjustments */
+  @media (min-width: 768px) {
+    #birthday-text {
+      font-size: clamp(2.5rem, 6vw, 7rem);
+    }
+  }
+
+  /* Large desktop */
+  @media (min-width: 1200px) {
+    #birthday-text {
+      font-size: clamp(3rem, 5vw, 8rem);
+    }
+  }
+</style>
+
+
+</head> 
+<body> 
+
+    <!-- Audio elements (WARNING: LOCAL PATHS LIKELY WILL NOT WORK) --> 
+    <audio id="flicker-sound" src="FLICKER SOUND EFFECT.mp3" preload="auto"></audio> 
+    <audio id="stadium-sound" src="Stadium.mp3" preload="auto"></audio> 
+    <audio id="song-sound" src="song.mp3" preload="auto"></audio>
+<audio id="vine-sound" src="vine.mp3" preload="auto"></audio>
+<audio id="alarm-sound" src="alarm.mp3" preload="auto"></audio>
+
+
+    <div id="image-container"> 
+        <!-- Image element (WARNING: LOCAL PATH LIKELY WILL NOT WORK) --> 
+        <img id="flicker-image" 
+              src="len.png" 
+              alt="Image related to the sequence from local path" 
+        /> 
+        <div id="click-prompt" class="font-medium">
+            .
+        </div>
+    </div> 
+    
+    <!-- Full-screen overlay for background fade -->
+    <div id="fade-overlay"></div>
+
+    <!-- Centered text for "HAPPY BIRTHDAY!!!" -->
+    <div id="birthday-text">
+        HAPPY BIRTHDAY!!!
+    </div>
+<div id="spawn-container" 
+     style="position:fixed; 
+            top:50%; 
+            left:50%; 
+            transform:translate(-50%,-50%); 
+            z-index:20; 
+            display:flex; 
+            align-items:center; 
+            justify-content:center;">
+</div>
+<!-- Fixed confetti sandbox -->
+<div id="confetti-container"
+     style="position:fixed; top:0; left:0; width:100%; height:100%;
+            overflow:hidden; pointer-events:none; z-index:9;"></div>
+
+
+
+    <script> 
+
+function playVineSoundRepeated() {
+    const vine = document.getElementById('vine-sound');
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const clone = vine.cloneNode(true); // clone so they can overlap
+            clone.play().catch(e => console.error("vine.mp3 failed:", e));
+        }, i * 50); // 0.05s intervals
+    }
+}
+
+function playAlarmSound() {
+    const alarm = document.getElementById('alarm-sound');
+    alarm.currentTime = 0;
+    alarm.play().catch(e => console.error("alarm.mp3 failed:", e));
+}
+
+function spawnImageAndGif() {
+    const container = document.getElementById('spawn-container');
+    container.innerHTML = ''; // clear any previous
+
+    const img = document.createElement('img');
+    img.src = 'confession.jpg';
+    img.style.maxWidth = '60vw';
+    img.style.maxHeight = '60vh';
+    img.style.position = 'relative'; // relative so it stays centered
+
+    const gif = document.createElement('img');
+    gif.src = 'funny.gif';
+    gif.style.maxWidth = '60vw';
+    gif.style.maxHeight = '60vh';
+    gif.style.position = 'absolute'; // sits on top of the image
+
+    container.appendChild(img);
+    container.appendChild(gif);
+
+    // Remove the gif after 4 seconds
+    setTimeout(() => {
+        if (gif && gif.parentNode) {
+            gif.parentNode.removeChild(gif);
+        }
+    }, 4000);
+}
+
+
+
+        // Global variables and constants 
+        const IMAGE_ID = 'flicker-image'; 
+        const FLICKER_DELAY_MAX = 50; // Max random delay in ms (0 to 50ms) 
+        const INITIAL_FLICKER_START_MS = 1300; // The fixed 1.3s mark for the 7-count flicker 
+         
+        // --- CONSTANTS FOR POST-VOLUME SEQUENCE --- 
+        const LEN_PATH = 'len.png'; 
+        const LEN0_PATH = 'len0.png'; 
+        const POST_VOLUME_INTERVAL = 80; // 0.08 seconds interval (80ms) 
+        // --------------------------------------------- 
+        
+        // --- CONSTANTS FOR FALLING IMAGES ---
+        const FALLING_IMAGE_PATHS = [
+            "flowers/1.png",
+            "flowers/2.png",
+            "flowers/3.png",
+            "flowers/4.png",
+            "flowers/5.png",
+            "flowers/6.png",
+            "flowers/7.png",
+            "flowers/8.png"
+        ];
+        
+        let particles = [];
+        let lastParticleTime = 0;
+        // Reverting to 500ms for "less images" effect
+        const PARTICLE_SPAWN_INTERVAL = 50; 
+
+        let imageElement; 
+        let audioElement; 
+        let stadiumAudioElement; 
+        let songAudioElement; 
+        let fadeOverlayElement; 
+        let birthdayTextElement; 
+
+        let animationStartTime; 
+        let isSequenceStarted = false; 
+
+        /** * Utility function to pause execution for a given number of milliseconds. 
+         * @param {number} ms - The number of milliseconds to wait. 
+         * @returns {Promise<void>} 
+         */ 
+        function delay(ms) { 
+            return new Promise(resolve => setTimeout(resolve, ms)); 
+        } 
+
+        /** * Generates a random opacity value between 0.2 and 0.5 for flickering visibility. 
+         * @returns {number} 
+         */ 
+        function getRandomFlickerOpacity() { 
+            const MIN_OPACITY = 0.2; 
+            const MAX_OPACITY = 0.5; 
+            return Math.random() * (MAX_OPACITY - MIN_OPACITY) + MIN_OPACITY; 
+        } 
+
+        /** * Plays the flicker sound effect. 
+         */ 
+        function playSound() { 
+            if (audioElement) { 
+                audioElement.pause(); 
+                audioElement.currentTime = 0; 
+                audioElement.play().catch(e => { 
+                    console.error("Flicker audio playback failed (check local file path):", e.message); 
+                }); 
+            } 
+        } 
+
+        /** * Plays the stadium sound effect. 
+         */ 
+        function playStadiumSound() { 
+            if (stadiumAudioElement) { 
+                stadiumAudioElement.pause(); 
+                stadiumAudioElement.currentTime = 0; 
+                stadiumAudioElement.play().catch(e => { 
+                    console.error("Stadium audio playback failed (check local file path):", e.message); 
+                }); 
+            } 
+        } 
+        
+        /** * Fades in the background overlay to 0.3 opacity and the "HAPPY BIRTHDAY!!!" text to 1.0 opacity 
+         * using the CSS transition properties (set to 3 seconds). 
+         */ 
+        function fadeInTextAndBackground() { 
+            if (fadeOverlayElement && birthdayTextElement) { 
+                // 1. Fade background to 0.3 opacity over 3s
+                fadeOverlayElement.style.opacity = 0.3; 
+                
+                // 2. Fade text to 1.0 opacity over 3s
+                birthdayTextElement.style.opacity = 1.0; 
+            } 
+        }
+        
+        /** * Class to manage a single falling, rotating image particle. 
+         */ 
+class FallingParticle {
+  constructor(imagePath) {
+    this.element = document.createElement('img');
+    this.element.src = imagePath;
+    this.element.className = 'falling-particle';
+
+    // Random initial state and physics
+    this.x = Math.random() * window.innerWidth;   // random horizontal start
+    this.y = -80;                                  // start just above viewport
+    this.rotation = Math.random() * 360;
+    this.speedY = Math.random() * 4 + 2;           // 2 to 6 px per frame
+    this.rotationSpeed = Math.random() * 4 - 2;    // -2 to +2 deg per frame
+
+    // Initial position
+    this.element.style.transform =
+      `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
+
+    // Append to fixed sandbox container
+    const container = document.getElementById('confetti-container');
+    container.appendChild(this.element);
+  }
+
+  update() {
+    this.y += this.speedY;
+    this.rotation += this.rotationSpeed;
+
+    this.element.style.transform =
+      `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
+
+    // Begin fading near bottom (90% of viewport height)
+    if (this.y > window.innerHeight * 0.9) {
+      this.element.style.opacity = 0;
+    }
+
+    // Remove once out of viewport (bounded by device aspect ratio)
+    return this.y > window.innerHeight;
+  }
+
+  remove() {
+    this.element.remove();
+  }
+}
+
+
+        /** * Starts the continuous falling and rotation animation loop. 
+         */
+        function startFallingImages() {
+            function animateParticles(currentTime) {
+                // Spawn a new particle if enough time has passed
+                if (currentTime - lastParticleTime > PARTICLE_SPAWN_INTERVAL) {
+                    const pathIndex = Math.floor(Math.random() * FALLING_IMAGE_PATHS.length);
+                    particles.push(new FallingParticle(FALLING_IMAGE_PATHS[pathIndex]));
+                    lastParticleTime = currentTime;
+                }
+
+                // Update all particles and filter out expired ones
+                particles = particles.filter(particle => {
+                    const isOffScreen = particle.update();
+                    if (isOffScreen) {
+                        particle.remove();
+                    }
+                    return !isOffScreen;
+                });
+
+                requestAnimationFrame(animateParticles);
+            }
+            
+            // Start the loop
+            requestAnimationFrame(animateParticles);
+        }
+
+         
+        /** * Smoothly fades in the song audio from 0.0 to 0.5 over 8 seconds, 
+         * then jumps to 1.0 at the 12 second mark (from fade start), and triggers the final visuals. 
+         */ 
+        function fadeInSong() { 
+            if (!songAudioElement) return; 
+
+            const FADE_DURATION = 8000; // 8 seconds for fade from 0.0 to 0.5 
+            const JUMP_TIME = 12000;    // 12 seconds total time until jump to 1.0 
+            const TARGET_VOLUME = 0.5; 
+             
+            const STEPS = 160; 
+            const INTERVAL = FADE_DURATION / STEPS;  
+            const VOLUME_INCREMENT = TARGET_VOLUME / STEPS; 
+
+            songAudioElement.volume = 0; 
+             
+            // Start playing immediately 
+            songAudioElement.play().catch(e => { 
+                console.error("Song audio playback failed (check local file path):", e.message); 
+            }); 
+
+            // --- Phase 1: Fade 0.0 to 0.5 over 8 seconds (8000ms) --- 
+            let currentStep = 0; 
+            const fadeInterval = setInterval(() => { 
+                currentStep++; 
+                if (currentStep <= STEPS) { 
+                    songAudioElement.volume = Math.min(TARGET_VOLUME, songAudioElement.volume + VOLUME_INCREMENT); 
+                } else { 
+                    clearInterval(fadeInterval); 
+                    songAudioElement.volume = TARGET_VOLUME; // Ensure it lands exactly on 0.5 
+                } 
+            }, INTERVAL); 
+             
+            // --- Phase 2 & 3: Wait until 12s mark, then jump to 1.0 and start image sequence --- 
+            setTimeout(() => { 
+                if (songAudioElement) { 
+                    songAudioElement.volume = 1.0; // Jump to 1.0 
+                    
+                    // 1. Start the text and background fade
+                    fadeInTextAndBackground();
+
+                    // 2. Start the rapid image flipping
+                    runPostVolumeSequence(); 
+                    
+                    // 3. Start the falling image confetti effect
+                    startFallingImages();
+
+    setTimeout(() => {
+        spawnImageAndGif();
+        playVineSoundRepeated();
+        playAlarmSound();
+    }, 10000);
+
+
+                } 
+            }, JUMP_TIME); 
+        } 
+
+        /** * Runs the indefinite image swapping and flipping sequence. 
+         */ 
+        async function runPostVolumeSequence() { 
+            // Note: The translateY value must match the default/desktop value (-72%)
+            const transformNormal = 'translate(-50%, -72%) scaleX(1)'; 
+            const transformFlipped = 'translate(-50%, -72%) scaleX(-1)'; 
+             
+            while (true) { 
+                // Step 1: len (normal) 
+                imageElement.src = LEN_PATH; 
+                imageElement.style.transform = transformNormal;  
+                await delay(POST_VOLUME_INTERVAL); 
+                 
+                // Step 2: len0 (normal) 
+                imageElement.src = LEN0_PATH; 
+                imageElement.style.transform = transformNormal;  
+                await delay(POST_VOLUME_INTERVAL); 
+
+                // Step 3: len (flipped horizontally) 
+                imageElement.src = LEN_PATH; 
+                imageElement.style.transform = transformFlipped;  
+                await delay(POST_VOLUME_INTERVAL); 
+                 
+                // Step 4: len0 (flipped horizontally) 
+                imageElement.src = LEN0_PATH; 
+                imageElement.style.transform = transformFlipped;  
+                await delay(POST_VOLUME_INTERVAL); 
+            } 
+        } 
+         
+        /** * Initializes all audio elements and sets volumes. 
+         */ 
+        function initializeAudio() { 
+            audioElement = document.getElementById('flicker-sound'); 
+            audioElement.volume = 0.7; 
+            audioElement.load(); 
+
+            stadiumAudioElement = document.getElementById('stadium-sound'); 
+            stadiumAudioElement.volume = 1.0; 
+            stadiumAudioElement.load(); 
+             
+            songAudioElement = document.getElementById('song-sound'); 
+            songAudioElement.volume = 0.0; // Start at 0 for fade-in 
+            songAudioElement.load(); 
+            
+            fadeOverlayElement = document.getElementById('fade-overlay'); 
+            birthdayTextElement = document.getElementById('birthday-text'); 
+        } 
+
+        /** * Attempts to play and immediately pause the audio on user interaction to unblock future playback. 
+         */ 
+        function attemptPlayAudio() { 
+            if (audioElement) { 
+                // Use flicker audio to unlock audio context 
+                audioElement.play().then(() => { 
+                    audioElement.pause(); 
+                    audioElement.currentTime = 0; 
+                     
+                    if (!isSequenceStarted) { 
+                        isSequenceStarted = true; 
+                        playSound(); // 1. Audio plays once on click 
+                        mainSequence(); 
+                    } 
+                }).catch(e => { 
+                    console.error("Audio unlock attempt failed:", e.message); 
+                     
+                    // Fallback for visual-only start if audio unlock fails 
+                     if (!isSequenceStarted) { 
+                        isSequenceStarted = true; 
+                        mainSequence(); 
+                    } 
+                }); 
+            } 
+        } 
+
+
+        /** * Runs a set number of on/off flashes. Image ends transparent. 
+         * @param {number} flashesLeft - The number of full flashes remaining (on/off pair). 
+         * @returns {Promise<void>} 
+         */ 
+        async function runFixedFlicker(flashesLeft) { 
+            if (flashesLeft <= 0) { 
+                imageElement.style.opacity = 0; // Ends transparent 
+                return; 
+            } 
+
+            const randomDelay = Math.random() * FLICKER_DELAY_MAX; 
+
+            // 1. Off state (briefly) 
+            imageElement.style.opacity = 0; 
+            await delay(randomDelay); 
+
+            // 2. On state (Random opacity 20%-50%) 
+            imageElement.style.opacity = getRandomFlickerOpacity(); 
+            await delay(randomDelay); 
+
+            // 3. Off state before next iteration 
+            imageElement.style.opacity = 0; 
+             
+            await runFixedFlicker(flashesLeft - 1); 
+        } 
+
+        /** * Runs continuous flickering within a specific time window. Image ends transparent. 
+         * @param {number} endTime - The absolute time (in performance.now() epoch) when the flickering should stop. 
+         * @returns {Promise<void>} 
+         */ 
+        async function runTimedFlicker(endTime) { 
+            const currentTime = performance.now(); 
+            if (currentTime >= endTime) { 
+                imageElement.style.opacity = 0; // Ends transparent 
+                return; 
+            } 
+
+            const remainingTime = endTime - currentTime; 
+            const randomDelay = Math.min(Math.random() * FLICKER_DELAY_MAX, remainingTime); 
+            
+            const isVisible = parseFloat(imageElement.style.opacity) > 0.1; 
+            imageElement.style.opacity = isVisible ? 0 : getRandomFlickerOpacity(); 
+             
+            await delay(randomDelay); 
+            
+            await runTimedFlicker(endTime); 
+        } 
+
+        /** * Orchestrates the entire sequence of animations. 
+         */ 
+        async function mainSequence() { 
+             
+            // --- 1. Delay to 1.3s Mark --- 
+            const initialDelay = INITIAL_FLICKER_START_MS - (performance.now() - animationStartTime); 
+            await delay(Math.max(0, initialDelay)); 
+             
+            // --- 2. Fixed Count Flicker (7 times) - TARGET STARTS AT 1.3s --- 
+            await runFixedFlicker(7); 
+             
+            // Calculate how long to wait to hit the 1.8s mark precisely 
+            await delay(Math.max(0, (1800 - (performance.now() - animationStartTime)))); 
+
+            // --- 3. Timed Flicker Range 1 (1.8s to 2.0s) --- 
+            let flickerEndTime = animationStartTime + 2000; // Stop at 2.0s 
+            await runTimedFlicker(flickerEndTime); 
+
+            // Calculate how long to wait to hit the 2.2s mark precisely 
+            await delay(Math.max(0, (2200 - (performance.now() - animationStartTime)))); 
+
+            // --- 4. Timed Flicker Range 2 (2.2s to 2.4s) --- 
+            flickerEndTime = animationStartTime + 2400; // Stop at 2.4s 
+            await runTimedFlicker(flickerEndTime); 
+
+            // Calculate how long to wait to hit the 2.7s mark precisely 
+            await delay(Math.max(0, (2700 - (performance.now() - animationStartTime)))); 
+
+            // --- 5. Timed Flicker Range 3 (2.7s to 3.2s) --- 
+            flickerEndTime = animationStartTime + 3200; // Stop at 3.2s 
+            await runTimedFlicker(flickerEndTime); 
+
+
+            // --- 6. Sequence Complete: WAIT 2 SECONDS, THEN FINAL VISIBILITY and STADIUM AUDIO --- 
+            await delay(2000); 
+             
+            playStadiumSound(); // Play stadium sound 
+            imageElement.style.opacity = 1; // Make image permanently visible (100%) 
+             
+            // --- 7. Wait 1 second after image reveal, then fade in song --- 
+            await delay(1000); // Wait 1 second 
+            fadeInSong(); // Starts 8s fade, then 12s jump (which includes the new text/bg fade, image flip, and falling images)
+        } 
+         
+        /** * Listener function to start the animation on the first interaction. 
+         */ 
+        function startAnimation() { 
+            document.removeEventListener('click', startAnimation); 
+            document.removeEventListener('touchstart', startAnimation);  
+
+            document.getElementById('click-prompt').remove();
+            document.getElementById('image-container').style.cursor = 'default'; 
+
+            animationStartTime = performance.now(); 
+             
+            attemptPlayAudio();  
+        } 
+
+        // Initialize elements and set up the start listener 
+        window.onload = function() { 
+            imageElement = document.getElementById(IMAGE_ID); 
+             
+            initializeAudio(); 
+             
+            document.addEventListener('click', startAnimation); 
+            document.addEventListener('touchstart', startAnimation);  
+        }; 
+
+    </script> 
+</body> 
+</html>
